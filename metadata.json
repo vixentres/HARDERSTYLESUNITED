@@ -1,0 +1,7 @@
+{
+  "name": "crm v2",
+  "description": "A professional CRM for ticket sales and management with a specialized Stitch-themed design, featuring client dashboards, admin validation panels, and inventory control.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
