@@ -345,14 +345,14 @@ export const mapUserDBToApp = (u: any): User => ({
     fullName: u.full_name,
     instagram: u.instagram,
     phoneNumber: u.phone_number,
-    pin: u.pin,
+    pin: u.pin, // Nexus Edition uses 'pin'
     role: u.role,
-    balance: Number(u.balance),
-    stars: Number(u.stars),
-    courtesyProgress: Number(u.courtesy_progress),
-    lifetimeTickets: Number(u.lifetime_tickets),
-    isPromoter: u.is_promoter,
-    referralCount: Number(u.referral_count),
+    balance: Number(u.balance || 0),
+    stars: Number(u.stars || 1),
+    courtesyProgress: Number(u.courtesy_progress || 0),
+    lifetimeTickets: Number(u.lifetime_tickets || 0),
+    isPromoter: u.is_promoter || false,
+    referralCount: Number(u.referral_count || 0),
     pendingEdits: u.pending_edits
 });
 
@@ -373,19 +373,19 @@ export const mapUserAppToDB = (u: Partial<User>) => ({
 
 export const mapTicketDBToApp = (t: any): TicketItem => ({
     id: t.id,
-    groupId: t.group_id,
-    status: t.status,
-    price: Number(t.price),
-    paidAmount: Number(t.paid_amount),
-    pendingPayment: Number(t.pending_payment),
-    cost: Number(t.cost),
+    groupId: t.group_id, // Nexus Edition uses group_id
+    status: t.status as any,
+    price: Number(t.price || 0),
+    paidAmount: Number(t.paid_amount || 0),
+    pendingPayment: Number(t.pending_payment || 0),
+    cost: Number(t.cost || 0),
     assignedLink: t.assigned_link,
     eventName: t.event_name,
     eventId: t.event_id,
-    isUnlocked: t.is_unlocked,
-    isCourtesy: t.is_courtesy,
+    isUnlocked: t.is_unlocked || false,
+    isCourtesy: t.is_courtesy || false,
     internalCorrelative: t.internal_correlative,
-    updatedAt: t.updated_at ? new Date(t.updated_at).getTime() : undefined
+    updatedAt: t.updated_at ? new Date(t.updated_at).getTime() : Date.now()
 });
 
 export const mapTicketAppToDB = (t: TicketItem) => ({

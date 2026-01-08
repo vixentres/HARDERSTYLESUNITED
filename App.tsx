@@ -15,33 +15,19 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch Users
-        const { data: userData } = await supabase.from('users').select('*');
-        const users = (userData || []).map(mapUserDBToApp);
-
-        // 2. Fetch Inventory
+        // 1. Fetch only Inventory and Config (Public Data)
         const { data: invData } = await supabase.from('inventory').select('*');
         const inventory = (invData || []).map(mapInventoryDBToApp);
 
-        // 3. Fetch Purchase Groups and Tickets
-        const { data: groupData } = await supabase.from('purchase_groups').select('*');
-        const { data: ticketData } = await supabase.from('tickets').select('*');
-
-        const purchaseGroups = (groupData || []).map(g => {
-          const items = (ticketData || [])
-            .filter(t => t.group_id === g.id)
-            .map(mapTicketDBToApp);
-          return mapGroupDBToApp(g, items);
-        });
-
+        // Note: Users and Groups will be loaded upon secure login for privacy
         setState(prev => ({
           ...prev,
-          users,
           inventory,
-          purchaseGroups
+          users: [], // Reset for security
+          purchaseGroups: []
         }));
       } catch (err) {
-        console.error('Error fetching data from Supabase:', err);
+        console.error('Error fetching public data from Supabase:', err);
       } finally {
         setLoading(false);
       }
@@ -76,23 +62,59 @@ const App: React.FC = () => {
 
   const handleLogin = async (id: string, pass?: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Authenticate via users table (Nexus Edition uses 'pin' column)
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('email', id)
         .single();
 
-      if (error || !data) return null;
+      if (userError || !userData) return null;
+      if (pass !== undefined && userData.pin !== pass) return null;
 
-      const u = mapUserDBToApp(data);
-      if (pass !== undefined && u.pin !== pass) return null;
+      const user = mapUserDBToApp(userData);
+
       if (pass !== undefined) {
-        setState(prev => ({ ...prev, currentUser: u }));
-        addLog(`Login: ${u.fullName}`, 'LOGIN');
+        setLoading(true);
+        // 2. Fetch Relational Data based on Role
+        let users: User[] = [user];
+        let groups: PurchaseGroup[] = [];
+
+        if (user.role === 'admin' || user.role === 'staff') {
+          // ADMINS: Fetch EVERYTHING
+          const [{ data: allUsers }, { data: allGroups }, { data: allTickets }] = await Promise.all([
+            supabase.from('users').select('*'),
+            supabase.from('purchase_groups').select('*'),
+            supabase.from('tickets').select('*')
+          ]);
+
+          users = (allUsers || []).map(mapUserDBToApp);
+          groups = (allGroups || []).map(g => {
+            const items = (allTickets || []).filter(t => t.group_id === g.id).map(mapTicketDBToApp);
+            return mapGroupDBToApp(g, items);
+          });
+        } else {
+          // CLIENTS: Fetch ONLY their groups and tickets
+          const { data: myGroups } = await supabase.from('purchase_groups').select('*').eq('user_email', user.email);
+          if (myGroups && myGroups.length > 0) {
+            const groupIds = myGroups.map(g => g.id);
+            const { data: myTickets } = await supabase.from('tickets').select('*').in('group_id', groupIds);
+
+            groups = myGroups.map(g => {
+              const items = (myTickets || []).filter(t => t.group_id === g.id).map(mapTicketDBToApp);
+              return mapGroupDBToApp(g, items);
+            });
+          }
+        }
+
+        setState(prev => ({ ...prev, currentUser: user, users, purchaseGroups: groups }));
+        addLog(`Login: ${user.fullName}`, 'LOGIN');
+        setLoading(false);
       }
-      return u;
+      return user;
     } catch (err) {
       console.error('Error in handleLogin:', err);
+      setLoading(false);
       return null;
     }
   };
