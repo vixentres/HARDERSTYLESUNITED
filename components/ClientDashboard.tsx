@@ -22,6 +22,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
    const [abonoModal, setAbonoModal] = useState<{ open: boolean; gid: string; tid: string | null; min: number; max: number }>({ open: false, gid: '', tid: null, min: 0, max: 0 });
    const [abonoValue, setAbonoValue] = useState('');
    const [profileModal, setProfileModal] = useState(false);
+<<<<<<< HEAD
    const [editData, setEditData] = useState({ fullName: user.fullName, instagram: user.instagram, phoneNumber: user.phoneNumber || '', pin: user.pin });
 
    const currentGroups = state.purchaseGroups.filter(g => g.userEmail === user.email && g.eventId === state.config.eventInternalId);
@@ -29,37 +30,70 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
 
    const bagTickets = useMemo(() => {
       return currentGroups.flatMap(g => g.items.map(item => ({ ...item, sellerEmail: g.sellerEmail })))
+=======
+   const [editData, setEditData] = useState({ full_name: user.full_name, instagram: user.instagram, phone_number: user.phone_number || '', pin: user.pin });
+
+   const currentGroups = state.purchaseGroups.filter(g => g.user_email === user.email && g.event_id === state.config.eventInternalId);
+   const myChat = state.conversations.find(c => c.clientEmail === user.email);
+
+   const bagTickets = useMemo(() => {
+      return currentGroups.flatMap(g => g.items.map(item => ({ ...item, seller_email: g.seller_email })))
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
          .filter(t => t.status === 'pending');
    }, [currentGroups]);
 
    const activeTickets = useMemo(() => {
+<<<<<<< HEAD
       return currentGroups.flatMap(g => g.items.map(item => ({ ...item, sellerEmail: g.sellerEmail })))
+=======
+      return currentGroups.flatMap(g => g.items.map(item => ({ ...item, seller_email: g.seller_email })))
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
          .filter(t => t.status !== 'pending');
    }, [currentGroups]);
 
    const pendingApprovalSum = useMemo(() => {
+<<<<<<< HEAD
       return currentGroups.flatMap(g => g.items).reduce((acc, i) => acc + (i.status === 'waiting_approval' ? (i.pendingPayment || 0) : 0), 0);
+=======
+      return currentGroups.flatMap(g => g.items).reduce((acc, i) => acc + (i.status === 'waiting_approval' ? (i.pending_payment || 0) : 0), 0);
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
    }, [currentGroups]);
 
    // Promoter Logic
    const promoterStats = useMemo(() => {
+<<<<<<< HEAD
       if (!user.isPromoter) return null;
       const mySalesGroups = state.purchaseGroups.filter(g => g.sellerEmail === user.email && g.eventId === state.config.eventInternalId);
       const confirmedTickets = mySalesGroups.flatMap(g => g.items).filter(t => t.status === 'paid' && !t.isCourtesy);
       const totalRevenue = confirmedTickets.reduce((acc, t) => acc + t.paidAmount, 0);
+=======
+      if (!user.is_promoter) return null;
+      const mySalesGroups = state.purchaseGroups.filter(g => g.seller_email === user.email && g.event_id === state.config.eventInternalId);
+      const confirmedTickets = mySalesGroups.flatMap(g => g.items).filter(t => t.status === 'paid' && !t.is_courtesy);
+      const totalRevenue = confirmedTickets.reduce((acc, t) => acc + t.paid_amount, 0);
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
       return {
          totalSold: confirmedTickets.length,
          revenue: totalRevenue,
          recentSales: mySalesGroups.map(g => ({
+<<<<<<< HEAD
             date: g.createdAt,
             buyer: state.users.find(u => u.email === g.userEmail)?.fullName || g.userEmail,
+=======
+            date: g.created_at,
+            buyer: state.users.find(u => u.email === g.user_email)?.full_name || g.user_email,
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
             count: g.items.filter(t => t.status === 'paid').length
          })).filter(s => s.count > 0).sort((a, b) => b.date - a.date)
       };
    }, [state.purchaseGroups, user]);
 
    const savings = state.config.referencePrice - state.config.finalPrice;
+<<<<<<< HEAD
    const progressToCourtesy = (user.isPromoter ? (user.referralCount || 0) : (user.courtesyProgress || 0)) % 10;
+=======
+   const progressToCourtesy = (user.is_promoter ? (user.referral_count || 0) : (user.courtesy_progress || 0)) % 10;
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
 
    const handleCopyBankDetails = (amount?: number) => {
       const total = amount || pendingApprovalSum;
@@ -81,7 +115,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
 
       if (abonoModal.gid === 'BATCH') {
          const perTicketAbono = val / bagTickets.length;
+<<<<<<< HEAD
          bagTickets.forEach(t => onAction(t.groupId, t.id, 'reserve', perTicketAbono));
+=======
+         bagTickets.forEach(t => onAction(t.group_id, t.id, 'reserve', perTicketAbono));
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
       } else {
          onAction(abonoModal.gid, abonoModal.tid, 'reserve', val);
       }
@@ -130,14 +168,24 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                   </div>
 
                   <div className="flex-1 space-y-2">
+<<<<<<< HEAD
                      <h3 className="font-syncopate font-bold text-2xl text-white uppercase">{user.fullName}</h3>
                      <p className="text-xs font-bold text-cyan-400 tracking-widest">@{user.instagram}</p>
                      <p className="text-[10px] text-slate-400 font-mono tracking-tighter">+{user.phoneNumber?.replace('+', '')}</p>
+=======
+                     <h3 className="font-syncopate font-bold text-2xl text-white uppercase">{user.full_name}</h3>
+                     <p className="text-xs font-bold text-cyan-400 tracking-widest">@{user.instagram}</p>
+                     <p className="text-[10px] text-slate-400 font-mono tracking-tighter">+{user.phone_number?.replace('+', '')}</p>
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                         <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-cyan-400 uppercase tracking-widest">
                            <i className="fas fa-star mr-1 text-[8px]"></i> Miembro
                         </span>
+<<<<<<< HEAD
                         {user.isPromoter && (
+=======
+                        {user.is_promoter && (
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                            <span className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-[9px] font-bold text-purple-400 uppercase tracking-widest shadow-[0_0_10px_rgba(168,85,247,0.3)]">
                               <i className="fas fa-bolt mr-1 text-[8px]"></i> Promotor
                            </span>
@@ -150,13 +198,21 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                <div className="mt-8 relative z-10 p-4 bg-black/40 rounded-2xl border border-white/5">
                   <div className="flex justify-between items-end mb-2">
                      <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest">
+<<<<<<< HEAD
                         {user.isPromoter ? 'Progreso Referidos (Cortesía)' : 'Progreso 10 Entradas (Cortesía)'}
+=======
+                        {user.is_promoter ? 'Progreso Referidos (Cortesía)' : 'Progreso 10 Entradas (Cortesía)'}
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                      </span>
                      <span className="text-[9px] font-bold text-white">{progressToCourtesy}/10</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                      <div
+<<<<<<< HEAD
                         className={`h-full bg-gradient-to-r ${user.isPromoter ? 'from-purple-600 to-pink-600 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.5)]'}`}
+=======
+                        className={`h-full bg-gradient-to-r ${user.is_promoter ? 'from-purple-600 to-pink-600 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.5)]'}`}
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                         style={{ width: `${progressToCourtesy * 10}%` }}
                      ></div>
                   </div>
@@ -231,29 +287,49 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                            <p className="text-xl font-mono font-bold text-white">{formatCurrency(ticket.price)}</p>
                         </div>
                         <div className="flex gap-2">
+<<<<<<< HEAD
                            <button onClick={() => handleFullPay(ticket.groupId, ticket.id, ticket.price)} className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-emerald-500/30 transition-all">Pagar Todo</button>
                            <button onClick={() => setAbonoModal({ open: true, gid: ticket.groupId, tid: ticket.id, min: 10000, max: ticket.price - ticket.paidAmount })} className="px-4 py-2 bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-amber-500/30 transition-all">Abonar</button>
                            <button onClick={() => onAction(ticket.groupId, ticket.id, 'delete')} className="px-3 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 hover:bg-red-500/20 transition-all"><i className="fas fa-trash"></i></button>
+=======
+                           <button onClick={() => handleFullPay(ticket.group_id, ticket.id, ticket.price)} className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-emerald-500/30 transition-all">Pagar Todo</button>
+                           <button onClick={() => setAbonoModal({ open: true, gid: ticket.group_id, tid: ticket.id, min: 10000, max: ticket.price - ticket.paid_amount })} className="px-4 py-2 bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-amber-500/30 transition-all">Abonar</button>
+                           <button onClick={() => onAction(ticket.group_id, ticket.id, 'delete')} className="px-3 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 hover:bg-red-500/20 transition-all"><i className="fas fa-trash"></i></button>
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                         </div>
                      </div>
                   )) : <div className="text-center py-10 text-slate-600 text-xs font-mono uppercase text-sm">Bolsa Vacía</div>
                ) : clientTab === 'tickets' ? (
                   activeTickets.length > 0 ? activeTickets.map((ticket, idx) => (
+<<<<<<< HEAD
                      <div key={ticket.id} className={`glass-panel p-6 rounded-[2rem] border transition-all hover:scale-[1.01] relative overflow-hidden ${ticket.isCourtesy ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)] bg-gradient-to-br from-amber-500/10 to-transparent' : 'border-white/5'}`}>
+=======
+                     <div key={ticket.id} className={`glass-panel p-6 rounded-[2rem] border transition-all hover:scale-[1.01] relative overflow-hidden ${ticket.is_courtesy ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)] bg-gradient-to-br from-amber-500/10 to-transparent' : 'border-white/5'}`}>
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent -mr-10 -mt-10 rounded-full blur-2xl"></div>
                         <div className="flex justify-between items-start relative z-10">
                            <div className="space-y-3">
                               <div className="flex items-center gap-2">
+<<<<<<< HEAD
                                  {ticket.isCourtesy ? <i className="fas fa-star text-amber-500 text-xs animate-pulse"></i> : <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">ID: {ticket.id}</p>}
                               </div>
                               <h4 className={`text-xl font-bold font-syncopate uppercase ${ticket.isCourtesy ? 'text-amber-500 neon-text-purple' : 'text-white'}`}>
                                  {ticket.isCourtesy ? 'Cortesía Harder Styles United' :
                                     (ticket.assignedLink ? (
                                        state.inventory.find(i => i.correlativeId === ticket.internalCorrelative && i.eventId === ticket.eventId)?.name || `ENTRADA #${ticket.internalCorrelative}`
+=======
+                                 {ticket.is_courtesy ? <i className="fas fa-star text-amber-500 text-xs animate-pulse"></i> : <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">ID: {ticket.id}</p>}
+                              </div>
+                              <h4 className={`text-xl font-bold font-syncopate uppercase ${ticket.is_courtesy ? 'text-amber-500 neon-text-purple' : 'text-white'}`}>
+                                 {ticket.is_courtesy ? 'Cortesía Harder Styles United' :
+                                    (ticket.assigned_link ? (
+                                       state.inventory.find(i => i.correlativeId === ticket.internal_correlative && i.eventId === ticket.event_id)?.name || `ENTRADA #${ticket.internal_correlative}`
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                                     ) : (ticket.price === 0 ? 'CORTESÍA VIP' : 'ENTRADA GENERAL'))
                                  }
                               </h4>
                               <span className={`inline-block px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${ticket.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (ticket.status === 'reserved' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20')}`}>
+<<<<<<< HEAD
                                  {ticket.status === 'waiting_approval' ? 'Pendiente Validación' :
                                     (ticket.status === 'paid' ? 'Pagado y Liberado' :
                                        (ticket.assignedLink ? 'Asignada (Pagando)' : 'Reservado / Pendiente Asignación'))}
@@ -261,11 +337,21 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                               {(ticket.paidAmount < ticket.price && !ticket.isCourtesy) && (
                                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-black/20 p-2 rounded-lg border border-white/5 inline-block">
                                     Pagado: <span className="text-emerald-400">{formatCurrency(ticket.paidAmount)}</span> / <span className="text-white">{formatCurrency(ticket.price)}</span> (Faltan: <span className="text-red-400">{formatCurrency(ticket.price - ticket.paidAmount)}</span>)
+=======
+                                 {ticket.status === 'waiting_approval' ? 'PENDIENTE (VALIDANDO)' :
+                                    (ticket.status === 'paid' ? 'PAGADO Y LIBERADO' :
+                                       (ticket.assigned_link ? 'ASIGNADA (PAGANDO)' : 'RESERVADO / PENDIENTE ASIGNACIÓN'))}
+                              </span>
+                              {(ticket.paid_amount < ticket.price && !ticket.is_courtesy) && (
+                                 <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-black/20 p-2 rounded-lg border border-white/5 inline-block">
+                                    Pagado: <span className="text-emerald-400">{formatCurrency(ticket.paid_amount)}</span> / <span className="text-white">{formatCurrency(ticket.price)}</span> (Faltan: <span className="text-red-400">{formatCurrency(ticket.price - ticket.paid_amount)}</span>)
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                                  </div>
                               )}
                            </div>
 
                            <div className="flex flex-col gap-2">
+<<<<<<< HEAD
                               {ticket.assignedLink && (
                                  <>
                                     {/* Download/QR & WhatsApp Buttons - Only if Unlocked OR Paid 100% */}
@@ -274,15 +360,36 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                                           <a href={ticket.assignedLink} target="_blank" className="w-10 h-10 bg-cyan-500 text-black flex items-center justify-center rounded-xl shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:scale-105 transition-all" title="Descargar Entrada"><i className="fas fa-qrcode"></i></a>
                                           <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, aquí está mi entrada para ${state.config.eventTitle}: ${ticket.assignedLink}`)}`} target="_blank" className="w-10 h-10 bg-emerald-500 text-black flex items-center justify-center rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:scale-105 transition-all" title="Compartir por WhatsApp"><i className="fab fa-whatsapp"></i></a>
                                        </>
+=======
+                              {ticket.assigned_link && (
+                                 <>
+                                    {/* Download/QR & WhatsApp Buttons - Only if Unlocked OR Paid 100% */}
+                                    {((ticket.paid_amount >= ticket.price && ticket.price > 0) || ticket.is_unlocked || ticket.is_courtesy) ? (
+                                       <div className="flex flex-col gap-2">
+                                          <a href={ticket.assigned_link} target="_blank" className="bg-cyan-500 text-black px-4 py-3 rounded-xl shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:scale-105 transition-all flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest" title="Descargar Entrada">
+                                             <i className="fas fa-download"></i>
+                                             <span>Descargar Ticket</span>
+                                          </a>
+                                          <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, aquí está mi entrada para ${state.config.eventTitle}: ${ticket.assigned_link}`)}`} target="_blank" className="w-full bg-emerald-500/20 text-emerald-500 py-2 rounded-xl border border-emerald-500/30 flex items-center justify-center gap-2 text-[8px] font-bold uppercase transition-all" title="Compartir por WhatsApp">
+                                             <i className="fab fa-whatsapp"></i> Compartir
+                                          </a>
+                                       </div>
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                                     ) : (
                                        <div className="w-10 h-10 bg-slate-700 text-black flex items-center justify-center rounded-xl opacity-50 grayscale cursor-not-allowed" title="Descarga Bloqueada"><i className="fas fa-lock text-slate-500"></i></div>
                                     )}
                                  </>
                               )}
                            </div>
+<<<<<<< HEAD
                            {(ticket.paidAmount < ticket.price && ticket.status !== 'waiting_approval' && !ticket.isCourtesy) && (
                               <div className="flex gap-2">
                                  <button onClick={() => setAbonoModal({ open: true, gid: ticket.groupId, tid: ticket.id, min: 10000, max: ticket.price - ticket.paidAmount })} className="h-10 px-4 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase shadow-lg shadow-amber-500/20 hover:scale-105 transition-all">Abonar / Pagar</button>
+=======
+                           {(ticket.paid_amount < ticket.price && ticket.status !== 'waiting_approval' && !ticket.is_courtesy) && (
+                              <div className="flex gap-2">
+                                 <button onClick={() => setAbonoModal({ open: true, gid: ticket.group_id, tid: ticket.id, min: 10000, max: ticket.price - ticket.paid_amount })} className="h-10 px-4 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase shadow-lg shadow-amber-500/20 hover:scale-105 transition-all">Abonar / Pagar</button>
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                               </div>
                            )}
                         </div>
@@ -355,7 +462,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                   <div className="space-y-4">
                      <div className="space-y-1">
                         <label className="text-[8px] font-bold text-slate-500 uppercase ml-2">Nombre Completo</label>
+<<<<<<< HEAD
                         <input className="input-neon w-full p-4 rounded-xl text-sm" value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} placeholder="Nombre Completo" />
+=======
+                        <input className="input-neon w-full p-4 rounded-xl text-sm" value={editData.full_name} onChange={e => setEditData({ ...editData, full_name: e.target.value })} placeholder="Nombre Completo" />
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                      </div>
                      <div className="space-y-1">
                         <label className="text-[8px] font-bold text-slate-500 uppercase ml-2">Instagram (sin @)</label>
@@ -366,7 +477,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ state, onLogout, onAd
                      </div>
                      <div className="space-y-1">
                         <label className="text-[8px] font-bold text-slate-500 uppercase ml-2">Teléfono</label>
+<<<<<<< HEAD
                         <input className="input-neon w-full p-4 rounded-xl text-sm" value={editData.phoneNumber} onChange={e => setEditData({ ...editData, phoneNumber: e.target.value })} placeholder="Teléfono" />
+=======
+                        <input className="input-neon w-full p-4 rounded-xl text-sm" value={editData.phone_number} onChange={e => setEditData({ ...editData, phone_number: e.target.value })} placeholder="Teléfono" />
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                      </div>
                      <div className="space-y-1">
                         <label className="text-[8px] font-bold text-slate-500 uppercase ml-2">Pin de Acceso / Seguridad</label>

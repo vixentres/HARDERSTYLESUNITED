@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,3 +10,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+=======
+/// <reference types="vite/client" />
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Faltan las variables de entorno de Supabase. Asegúrate de configurar .env.local');
+}
+
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)

@@ -102,7 +102,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
                     <i className="fas fa-fingerprint text-slate-500 group-focus-within:text-cyan-400 transition-colors"></i>
                   </div>
                   <input
+<<<<<<< HEAD
                     placeholder="IDENTIFICADOR / EMAIL"
+=======
+                    placeholder="CORREO ELECTRÓNICO"
+>>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                     className="input-neon w-full py-4 pl-12 pr-4 rounded-xl text-sm font-bold tracking-widest uppercase text-center placeholder-slate-600"
                     value={identifier} onChange={e => setIdentifier(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && handleCheck()}

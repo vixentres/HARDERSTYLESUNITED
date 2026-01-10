@@ -15,15 +15,13 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch only Inventory and Config (Public Data)
         const { data: invData } = await supabase.from('inventory').select('*');
         const inventory = (invData || []).map(mapInventoryDBToApp);
 
-        // Note: Users and Groups will be loaded upon secure login for privacy
         setState(prev => ({
           ...prev,
           inventory,
-          users: [], // Reset for security
+          users: [],
           purchaseGroups: []
         }));
       } catch (err) {
@@ -40,20 +38,19 @@ const App: React.FC = () => {
     const newLog: ActivityLog = {
       timestamp: Date.now(),
       action,
-      user: state.currentUser?.email || 'SYSTEM',
-      userFullName: state.currentUser?.fullName || 'System',
+      user_email: state.currentUser?.email || 'SYSTEM',
+      user_full_name: state.currentUser?.full_name || 'System',
       type,
-      eventId: state.config.eventInternalId,
+      event_id: state.config.event_internal_id,
       details
     };
 
-    // Supabase Sync
     await supabase.from('activity_logs').insert([{
       action,
       user_email: state.currentUser?.email || 'SYSTEM',
-      user_full_name: state.currentUser?.fullName || 'System',
+      user_full_name: state.currentUser?.full_name || 'System',
       type,
-      event_id: state.config.eventInternalId,
+      event_id: state.config.event_internal_id,
       details
     }]);
 
@@ -62,7 +59,6 @@ const App: React.FC = () => {
 
   const handleLogin = async (id: string, pass?: string) => {
     try {
-      // 1. Authenticate via users table (Nexus Edition uses 'pin' column)
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -76,12 +72,10 @@ const App: React.FC = () => {
 
       if (pass !== undefined) {
         setLoading(true);
-        // 2. Fetch Relational Data based on Role
         let users: User[] = [user];
         let groups: PurchaseGroup[] = [];
 
         if (user.role === 'admin' || user.role === 'staff') {
-          // ADMINS: Fetch EVERYTHING
           const [{ data: allUsers }, { data: allGroups }, { data: allTickets }] = await Promise.all([
             supabase.from('users').select('*'),
             supabase.from('purchase_groups').select('*'),
@@ -94,21 +88,36 @@ const App: React.FC = () => {
             return mapGroupDBToApp(g, items);
           });
         } else {
-          // CLIENTS: Fetch ONLY their groups and tickets
-          const { data: myGroups } = await supabase.from('purchase_groups').select('*').eq('user_email', user.email);
-          if (myGroups && myGroups.length > 0) {
-            const groupIds = myGroups.map(g => g.id);
-            const { data: myTickets } = await supabase.from('tickets').select('*').in('group_id', groupIds);
+          const { data: myData, error: joinError } = await supabase
+            .from('tickets')
+            .select('*, purchase_groups!inner(*)')
+            .eq('purchase_groups.user_email', user.email);
 
-            groups = myGroups.map(g => {
-              const items = (myTickets || []).filter(t => t.group_id === g.id).map(mapTicketDBToApp);
-              return mapGroupDBToApp(g, items);
+          if (joinError) console.error("Error in relational fetch:", joinError);
+
+          if (myData && myData.length > 0) {
+            const ticketMap: Record<string, any[]> = {};
+            const groupDataMap: Record<string, any> = {};
+
+            myData.forEach((row: any) => {
+              const ticket = row;
+              const group = row.purchase_groups;
+              if (!ticketMap[group.id]) {
+                ticketMap[group.id] = [];
+                groupDataMap[group.id] = group;
+              }
+              ticketMap[group.id].push(mapTicketDBToApp(ticket));
             });
+
+            groups = Object.keys(groupDataMap).map(gid => mapGroupDBToApp(groupDataMap[gid], ticketMap[gid]));
+          } else {
+            const { data: emptyGroups } = await supabase.from('purchase_groups').select('*').eq('user_email', user.email);
+            if (emptyGroups) groups = emptyGroups.map(g => mapGroupDBToApp(g, []));
           }
         }
 
         setState(prev => ({ ...prev, currentUser: user, users, purchaseGroups: groups }));
-        addLog(`Login: ${user.fullName}`, 'LOGIN');
+        addLog(`Login: ${user.full_name}`, 'LOGIN');
         setLoading(false);
       }
       return user;
@@ -120,8 +129,8 @@ const App: React.FC = () => {
   };
 
   const handleRegister = async (data: any) => {
-    const cleanPhone = formatPhoneNumber(data.phoneNumber || '');
-    const newUser: User = { ...data, phoneNumber: cleanPhone, balance: 0, stars: 1, courtesyProgress: 0, lifetimeTickets: 0, role: 'client', isPromoter: false, referralCount: 0 };
+    const cleanPhone = formatPhoneNumber(data.phone_number || '');
+    const newUser: User = { ...data, phone_number: cleanPhone, balance: 0, stars: 1, courtesy_progress: 0, lifetime_tickets: 0, role: 'client', is_promoter: false, referral_count: 0 };
 
     const dbUser = mapUserAppToDB(newUser);
     const { error } = await supabase.from('users').insert([{ ...dbUser, email: newUser.email }]);
@@ -132,12 +141,12 @@ const App: React.FC = () => {
     }
 
     setState(prev => ({ ...prev, users: [...prev.users, newUser], currentUser: newUser }));
-    addLog(`Registro: ${newUser.fullName}`, 'LOGIN');
+    addLog(`Registro: ${newUser.full_name}`, 'LOGIN');
     return newUser;
   };
 
   const handleLogout = () => {
-    addLog(`Logout: ${state.currentUser?.fullName}`, 'LOGIN');
+    addLog(`Logout: ${state.currentUser?.full_name}`, 'LOGIN');
     setState(prev => ({ ...prev, currentUser: null }));
   };
 
@@ -147,15 +156,15 @@ const App: React.FC = () => {
     let finalSellerEmail = '';
     if (sellerCode.trim()) {
       const sellerUser = state.users.find(u =>
-        u.fullName.toLowerCase() === sellerCode.trim().toLowerCase() &&
-        (u.isPromoter || u.role === 'admin' || u.role === 'staff')
+        u.full_name.toLowerCase() === sellerCode.trim().toLowerCase() &&
+        (u.is_promoter || u.role === 'admin' || u.role === 'staff')
       );
       if (!sellerUser) {
         alert("Código de promotor (Nombre) no encontrado en la base de datos.");
         return;
       }
       if (sellerUser.email === state.currentUser?.email) {
-        const isPromoter = state.currentUser?.role === 'promoter' || state.currentUser?.isPromoter;
+        const isPromoter = state.currentUser?.role === 'promoter' || state.currentUser?.is_promoter;
         if (isPromoter) {
           alert(`Bloqueo de Autoventa: No puedes utilizar tu propio código ("${sellerCode}") para realizar compras personales.`);
           return;
@@ -167,28 +176,27 @@ const App: React.FC = () => {
     const groupId = `G-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const newItems: TicketItem[] = Array.from({ length: qty }).map((_, i) => ({
       id: `T-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      groupId,
+      group_id: groupId,
       status: 'pending',
-      price: state.config.finalPrice,
-      paidAmount: 0,
+      price: state.config.final_price,
+      paid_amount: 0,
       cost: 0,
-      eventName: state.config.eventTitle,
-      eventId: state.config.eventInternalId,
-      updatedAt: Date.now()
+      event_name: state.config.event_title,
+      event_id: state.config.event_internal_id,
+      updated_at: Date.now()
     }));
     const newGroup: PurchaseGroup = {
       id: groupId,
-      userEmail: state.currentUser.email,
-      sellerEmail: finalSellerEmail,
+      user_email: state.currentUser.email,
+      seller_email: finalSellerEmail,
       items: newItems,
-      totalAmount: state.config.finalPrice * qty,
-      isFullPayment: false,
-      createdAt: Date.now(),
+      total_amount: state.config.final_price * qty,
+      is_full_payment: false,
+      created_at: Date.now(),
       status: 'pending',
-      eventId: state.config.eventInternalId
+      event_id: state.config.event_internal_id
     };
 
-    // SUPABASE PERSISTENCE
     const { error: gError } = await supabase.from('purchase_groups').insert([mapGroupAppToDB(newGroup)]);
     if (gError) return alert(`Error: ${gError.message}`);
 
@@ -219,23 +227,17 @@ const App: React.FC = () => {
   const handleAction = async (gid: string, tid: string | null, act: string, val?: number) => {
     const updates = processAction(state, gid, tid, act, val);
 
-    // SYNC UPDATES TO SUPABASE
-    // 1. Sync Groups (only the affected one)
     const affectedGroup = updates.purchaseGroups.find(g => g.id === gid);
     if (affectedGroup) {
       await supabase.from('purchase_groups').upsert([mapGroupAppToDB(affectedGroup)]);
-      // Sync Tickets in group
       await supabase.from('tickets').upsert(affectedGroup.items.map(mapTicketAppToDB));
     }
 
-    // 2. Sync Inventory (if affected)
-    // For simplicity, we sync entries that might have changed
     const changedInv = updates.inventory.filter((inv, idx) => inv !== state.inventory[idx]);
     if (changedInv.length > 0) {
       await supabase.from('inventory').upsert(changedInv.map(mapInventoryAppToDB));
     }
 
-    // 3. Sync Users (if affected)
     const changedUsers = updates.users.filter((u, idx) => u !== state.users[idx]);
     if (changedUsers.length > 0) {
       await supabase.from('users').upsert(changedUsers.map(mapUserAppToDB));
@@ -251,14 +253,14 @@ const App: React.FC = () => {
 
   const handleSendMessage = (cEmail: string, sEmail: string, text: string) => {
     setState(prev => {
-      const convIdx = prev.conversations.findIndex(c => c.clientEmail === cEmail);
+      const convIdx = prev.conversations.findIndex(c => c.client_email === cEmail);
       const role = prev.users.find(u => u.email === (prev.currentUser?.email || sEmail))?.role || 'client';
       const newMessage = { sender: prev.currentUser?.email || sEmail, role, text, timestamp: Date.now() };
 
       if (convIdx === -1) {
         return {
           ...prev,
-          conversations: [...prev.conversations, { clientEmail: cEmail, staffEmail: sEmail, messages: [newMessage] }]
+          conversations: [...prev.conversations, { client_email: cEmail, staff_email: sEmail, messages: [newMessage] }]
         };
       }
 
@@ -287,13 +289,13 @@ const App: React.FC = () => {
       const { error } = await supabase.from('inventory')
         .delete()
         .eq('correlative_id', correlativeId)
-        .eq('event_id', state.config.eventInternalId);
+        .eq('event_id', state.config.event_internal_id);
 
       if (error) return alert(`Error: ${error.message}`);
 
       setState(prev => ({
         ...prev,
-        inventory: prev.inventory.filter(i => i.correlativeId !== correlativeId || i.eventId !== prev.config.eventInternalId)
+        inventory: prev.inventory.filter(i => i.correlative_id !== correlativeId || i.event_id !== prev.config.event_internal_id)
       }));
       addLog(`Entrada eliminada Stock #${correlativeId}`, 'SISTEMA');
     }
@@ -324,8 +326,8 @@ const App: React.FC = () => {
             if (!email) return;
 
             const formattedUpd = { ...upd };
-            if (formattedUpd.phoneNumber) {
-              formattedUpd.phoneNumber = formatPhoneNumber(formattedUpd.phoneNumber);
+            if (formattedUpd.phone_number) {
+              formattedUpd.phone_number = formatPhoneNumber(formattedUpd.phone_number);
             }
 
             const dbUpd = mapUserAppToDB(formattedUpd);
@@ -341,7 +343,7 @@ const App: React.FC = () => {
               const uIdx = nextUsers.findIndex(u => u.email === email);
               if (uIdx === -1) return prev;
 
-              nextUsers[uIdx] = { ...nextUsers[uIdx], ...formattedUpd, pendingEdits: undefined };
+              nextUsers[uIdx] = { ...nextUsers[uIdx], ...formattedUpd, pending_edits: undefined };
               addLog(`Perfil Actualizado: ${nextUsers[uIdx].email}`, 'EDICION');
 
               return {
@@ -364,8 +366,8 @@ const App: React.FC = () => {
           }}
           onUpdateUserManual={async (email, data) => {
             const formattedData = { ...data };
-            if (formattedData.phoneNumber) {
-              formattedData.phoneNumber = formatPhoneNumber(formattedData.phoneNumber);
+            if (formattedData.phone_number) {
+              formattedData.phone_number = formatPhoneNumber(formattedData.phone_number);
             }
 
             const { error } = await supabase.from('users').update(mapUserAppToDB(formattedData)).eq('email', email);
