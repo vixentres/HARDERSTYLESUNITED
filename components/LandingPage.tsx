@@ -19,7 +19,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
 
   useEffect(() => {
     const calculateTime = () => {
-      const parts = config.eventDate.split('/');
+      const parts = config.event_date.split('/');
       if (parts.length !== 3) return;
 
       const day = parseInt(parts[0], 10);
@@ -44,7 +44,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
     calculateTime();
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
-  }, [config.eventDate]);
+  }, [config.event_date]);
 
   const handleCheck = async () => {
     if (!identifier) return;
@@ -75,7 +75,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
           <div className="p-10 text-center relative border-b border-white/5">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50"></div>
             <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${identifier || 'HSU'}`} className="w-24 h-24 mx-auto rounded-full border-2 border-white/10 mb-6 shadow-[0_0_30px_rgba(0,243,255,0.2)]" />
-            <h1 className="text-3xl font-syncopate font-bold mb-2 text-white tracking-widest">{config.eventTitle}</h1>
+            <h1 className="text-3xl font-syncopate font-bold mb-2 text-white tracking-widest">{config.event_title}</h1>
             <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.6em] animate-pulse">Acceso al Sistema v2.0</p>
           </div>
 
@@ -102,11 +102,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
                     <i className="fas fa-fingerprint text-slate-500 group-focus-within:text-cyan-400 transition-colors"></i>
                   </div>
                   <input
-<<<<<<< HEAD
-                    placeholder="IDENTIFICADOR / EMAIL"
-=======
                     placeholder="CORREO ELECTRÓNICO"
->>>>>>> 52911ce (Configuración inicial con Antigravity y Supabase MCP)
                     className="input-neon w-full py-4 pl-12 pr-4 rounded-xl text-sm font-bold tracking-widest uppercase text-center placeholder-slate-600"
                     value={identifier} onChange={e => setIdentifier(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && handleCheck()}

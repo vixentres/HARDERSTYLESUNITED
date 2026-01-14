@@ -3,13 +3,60 @@ import { AppState, User, PurchaseGroup, SystemConfig, InventoryItem, TicketItem,
 import LandingPage from './components/LandingPage';
 import ClientDashboard from './components/ClientDashboard';
 import AdminPanel from './components/AdminPanel';
+import { useEventConfig } from './src/hooks/useEventConfig';
+import { AdminService } from './src/services/admin';
 import { generateMockData } from './mockData';
 import { processAction, generateCourtesyTicket, formatPhoneNumber, formatCurrency, mapUserDBToApp, mapInventoryDBToApp, mapGroupDBToApp, mapTicketDBToApp, mapUserAppToDB, mapGroupAppToDB, mapTicketAppToDB, mapInventoryAppToDB } from './logic';
 import { supabase } from './src/lib/supabaseClient';
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>(() => generateMockData());
+  const [state, setState] = useState<AppState>(() => {
+    const initial = generateMockData();
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        initial.currentUser = JSON.parse(storedUser);
+      } catch (e) { console.error("Failed to parse stored user", e); }
+    }
+    return initial;
+  });
+
+
+
   const [loading, setLoading] = useState(true);
+  const [impersonatingUser, setImpersonatingUser] = useState<User | null>(() => {
+    const stored = localStorage.getItem('impersonatingUser');
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  useEffect(() => {
+    if (impersonatingUser) {
+      localStorage.setItem('impersonatingUser', JSON.stringify(impersonatingUser));
+    } else {
+      localStorage.removeItem('impersonatingUser');
+    }
+  }, [impersonatingUser]);
+
+  useEffect(() => {
+    if (state.currentUser && !impersonatingUser) { // Only persist REAL user
+      localStorage.setItem('currentUser', JSON.stringify(state.currentUser));
+    } else if (!state.currentUser) {
+      localStorage.removeItem('currentUser');
+    }
+  }, [state.currentUser, impersonatingUser]);
+
+  // -- Event Config Integration --
+  const { config: remoteConfig, loading: configLoading } = useEventConfig();
+
+  useEffect(() => {
+    if (remoteConfig) {
+      setState(prev => ({
+        ...prev,
+        config: { ...prev.config, ...remoteConfig }
+      }));
+    }
+  }, [remoteConfig]);
+  // -----------------------------
 
   useEffect(() => {
     const fetchData = async () => {
@@ -303,7 +350,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30">
-      {loading ? (
+      {loading || (configLoading && !state.config.event_internal_id) ? (
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
         </div>
@@ -314,46 +361,67 @@ const App: React.FC = () => {
           onRegister={handleRegister}
           onSuccess={(u) => setState(prev => ({ ...prev, currentUser: u }))}
         />
-      ) : state.currentUser.role === 'client' ? (
-        <ClientDashboard
-          state={state}
-          onLogout={handleLogout}
-          onAddToBag={handleAddToBag}
-          onSendMessage={(txt) => handleSendMessage(state.currentUser!.email, 'admin', txt)}
-          onAction={handleAction}
-          onUpdateProfile={async (upd) => {
-            const email = state.currentUser?.email;
-            if (!email) return;
+      ) : (state.currentUser.role === 'client' || impersonatingUser) ? (
+        <>
+          {impersonatingUser && (
+            <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-black px-4 py-2 shadow-lg flex items-center justify-center gap-4 border-b border-amber-600 animate-in slide-in-from-top duration-300">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-eye"></i>
+                <span className="font-black font-mono text-xs uppercase tracking-widest">Vista Cliente: {impersonatingUser.full_name}</span>
+              </div>
+              <button
+                onClick={() => setImpersonatingUser(null)}
+                className="px-3 py-1 bg-black/10 hover:bg-black/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-black/10"
+              >
+                Salir
+              </button>
+            </div>
+          )}
+          <ClientDashboard
+            state={{ ...state, currentUser: impersonatingUser || state.currentUser! }}
+            onLogout={() => {
+              if (impersonatingUser) setImpersonatingUser(null);
+              else handleLogout();
+            }}
+            onAddToBag={handleAddToBag}
+            onSendMessage={(txt) => handleSendMessage((impersonatingUser || state.currentUser!).email, 'admin', txt)}
+            onAction={handleAction}
+            onUpdateProfile={async (upd) => {
+              if (impersonatingUser) return alert("No se pueden editar perfiles en modo vista.");
 
-            const formattedUpd = { ...upd };
-            if (formattedUpd.phone_number) {
-              formattedUpd.phone_number = formatPhoneNumber(formattedUpd.phone_number);
-            }
+              const email = state.currentUser?.email;
+              if (!email) return;
 
-            const dbUpd = mapUserAppToDB(formattedUpd);
-            const { error } = await supabase.from('users').update(dbUpd).eq('email', email);
+              const formattedUpd = { ...upd };
+              if (formattedUpd.phone_number) {
+                formattedUpd.phone_number = formatPhoneNumber(formattedUpd.phone_number);
+              }
 
-            if (error) {
-              alert(`Error al actualizar perfil: ${error.message}`);
-              return;
-            }
+              const dbUpd = mapUserAppToDB(formattedUpd);
+              const { error } = await supabase.from('users').update(dbUpd).eq('email', email);
 
-            setState(prev => {
-              const nextUsers = [...prev.users];
-              const uIdx = nextUsers.findIndex(u => u.email === email);
-              if (uIdx === -1) return prev;
+              if (error) {
+                alert(`Error al actualizar perfil: ${error.message}`);
+                return;
+              }
 
-              nextUsers[uIdx] = { ...nextUsers[uIdx], ...formattedUpd, pending_edits: undefined };
-              addLog(`Perfil Actualizado: ${nextUsers[uIdx].email}`, 'EDICION');
+              setState(prev => {
+                const nextUsers = [...prev.users];
+                const uIdx = nextUsers.findIndex(u => u.email === email);
+                if (uIdx === -1) return prev;
 
-              return {
-                ...prev,
-                users: nextUsers,
-                currentUser: { ...nextUsers[uIdx] }
-              };
-            });
-          }}
-        />
+                nextUsers[uIdx] = { ...nextUsers[uIdx], ...formattedUpd, pending_edits: undefined };
+                addLog(`Perfil Actualizado: ${nextUsers[uIdx].email}`, 'EDICION');
+
+                return {
+                  ...prev,
+                  users: nextUsers,
+                  currentUser: { ...nextUsers[uIdx] }
+                };
+              });
+            }}
+          />
+        </>
       ) : (
         <AdminPanel
           state={state}
@@ -370,9 +438,14 @@ const App: React.FC = () => {
               formattedData.phone_number = formatPhoneNumber(formattedData.phone_number);
             }
 
-            const { error } = await supabase.from('users').update(mapUserAppToDB(formattedData)).eq('email', email);
-            if (error) return alert(error.message);
+            // Secure Update via AdminService (API)
+            const result = await AdminService.updateClient(email, formattedData, state.currentUser);
 
+            if (!result.success) {
+              return alert("Error actualizando usuario via Admin API: " + result.error);
+            }
+
+            // Sync Local State
             setState(prev => {
               const nextUsers = [...prev.users];
               const uIdx = nextUsers.findIndex(u => u.email === email);
@@ -385,6 +458,7 @@ const App: React.FC = () => {
               }
               return { ...prev, users: nextUsers, currentUser: nextCurrentUser };
             });
+            addLog(`Usuario Editado (Admin): ${email}`, 'EDICION');
           }}
           onAction={handleAction}
           onSendMessage={handleSendMessage}
@@ -406,6 +480,7 @@ const App: React.FC = () => {
           }}
           onDeleteInventoryItem={handleDeleteInventoryItem}
           onGrantCourtesy={handleGrantCourtesy}
+          onImpersonate={(u) => setImpersonatingUser(u)}
         />
       )}
     </div>
