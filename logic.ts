@@ -438,3 +438,16 @@ export const mapInventoryAppToDB = (i: InventoryItem) => ({
     assigned_ticket_id: i.assigned_ticket_id,
     status: i.status
 });
+
+export const saveEventConfig = async (productId: string, config: any) => {
+  const { data, error } = await supabase
+    .from('event_settings')
+    .upsert({ 
+      product_id: productId, 
+      event_date: config.date,
+      access_code: config.code,
+      location: config.location 
+    });
+  if (error) throw error;
+  return data;
+};
