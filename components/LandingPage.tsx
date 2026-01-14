@@ -19,14 +19,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ config, onLoginAttempt, onReg
 
   useEffect(() => {
     const calculateTime = () => {
-      const parts = config.event_date.split('/');
-      if (parts.length !== 3) return;
+      let eventDateObj: Date;
 
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
-
-      const eventDateObj = new Date(year, month, day);
+      // Handle YYYY-MM-DD (ISO) vs DD/MM/YYYY (Legacy/Manual)
+      if (config.event_date.includes('-')) {
+        const [year, month, day] = config.event_date.split('-').map(Number);
+        eventDateObj = new Date(year, month - 1, day);
+      } else {
+        const parts = config.event_date.split('/');
+        if (parts.length !== 3) return;
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        eventDateObj = new Date(year, month, day);
+      }
       const diff = eventDateObj.getTime() - Date.now();
 
       if (diff > 0) {

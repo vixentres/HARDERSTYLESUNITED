@@ -35,7 +35,10 @@ export const EventConfigService = {
             event_date: data.fecha_evento, // Ensure format is compatible or parse it
             reference_price: data.precio_referencial,
             final_price: data.precio_final,
-            // Add extra fields to SystemConfig if needed, currently mapping to strictly typed ones
+            banner_url: data.banner_url,
+            map_url: data.map_url,
+            whatsapp_contacto: data.whatsapp_contacto,
+            event_location: data.event_location
         };
     },
 

@@ -85,6 +85,10 @@ export interface SystemConfig {
   event_date: string;
   reference_price: number; // Precio "Real" para tachar
   final_price: number;
+  banner_url?: string;
+  map_url?: string;
+  whatsapp_contacto?: string;
+  event_location?: string;
 }
 
 export type LogType = 'RESERVA' | 'COMPRA' | 'EDICION' | 'LOGIN' | 'BOLSA' | 'APROBACION' | 'SISTEMA' | 'ANULACION' | 'REVERSION' | 'CHAT';

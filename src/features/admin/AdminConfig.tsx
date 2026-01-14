@@ -22,8 +22,10 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, onUpdateConfig }) => 
                 precio_referencial: configForm.reference_price,
                 precio_final: configForm.final_price,
                 fecha_evento: configForm.event_date,
-                // These might need to be preserved if they exist in configForm but not in UI inputs
-                // For now, we only update what's in the form
+                banner_url: configForm.banner_url,
+                map_url: configForm.map_url,
+                whatsapp_contacto: configForm.whatsapp_contacto,
+                event_location: configForm.event_location
             };
 
             const success = await EventConfigService.updateConfigViaApi(dbUpdate as any);
@@ -85,6 +87,47 @@ const AdminConfig: React.FC<AdminConfigProps> = ({ config, onUpdateConfig }) => 
                             onChange={(e) => setConfigForm({ ...configForm, event_date: e.target.value })}
                         />
                     </div>
+                    <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Ubicación del Evento</label>
+                        <input
+                            type="text"
+                            className="w-full bg-[#11111a] border border-white/5 rounded-2xl px-4 py-4 text-sm font-black text-white outline-none focus:border-cyan-500/50 transition-all"
+                            value={configForm.event_location || ''}
+                            onChange={(e) => setConfigForm({ ...configForm, event_location: e.target.value })}
+                            placeholder="Ej: Espacio Riesco"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Banner URL</label>
+                        <input
+                            type="text"
+                            className="w-full bg-[#11111a] border border-white/5 rounded-2xl px-4 py-4 text-sm font-black text-white outline-none focus:border-cyan-500/50 transition-all"
+                            value={configForm.banner_url || ''}
+                            onChange={(e) => setConfigForm({ ...configForm, banner_url: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Map URL</label>
+                        <input
+                            type="text"
+                            className="w-full bg-[#11111a] border border-white/5 rounded-2xl px-4 py-4 text-sm font-black text-white outline-none focus:border-cyan-500/50 transition-all"
+                            value={configForm.map_url || ''}
+                            onChange={(e) => setConfigForm({ ...configForm, map_url: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">WhatsApp Contacto (Sin +)</label>
+                        <input
+                            type="text"
+                            className="w-full bg-[#11111a] border border-white/5 rounded-2xl px-4 py-4 text-sm font-black text-white outline-none focus:border-cyan-500/50 transition-all"
+                            value={configForm.whatsapp_contacto || ''}
+                            onChange={(e) => setConfigForm({ ...configForm, whatsapp_contacto: e.target.value })}
+                        />
+                    </div>
+
                     <button
                         onClick={handleSave}
                         disabled={isLoading}
